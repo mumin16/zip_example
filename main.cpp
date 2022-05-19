@@ -10,47 +10,40 @@
 #include <string>
 
 /***************************************************************************/
-
 typedef struct minizip_opt_s {
-    uint8_t     include_path;
-    int16_t     compress_level;
-    uint8_t     compress_method;
-    uint8_t     overwrite;
-    uint8_t     append;
-    int64_t     disk_size;
-    uint8_t     follow_links;
-    uint8_t     store_links;
-    uint8_t     zip_cd;
-    int32_t     encoding;
-    uint8_t     verbose;
-    uint8_t     aes;
+    uint8_t include_path;
+    int16_t compress_level;
+    uint8_t compress_method;
+    uint8_t overwrite;
+    uint8_t append;
+    int64_t disk_size;
+    uint8_t follow_links;
+    uint8_t store_links;
+    uint8_t zip_cd;
+    int32_t encoding;
+    uint8_t verbose;
+    uint8_t aes;
     const char *cert_path;
     const char *cert_pwd;
 } minizip_opt;
 
 /***************************************************************************/
-
-
-
-int32_t minizip_list(const char *path,std::vector<std::string>& filenames);
+int32_t minizip_list(const char *path, std::vector<std::string> &filenames);
 
 int32_t minizip_add_entry_cb(void *handle, void *userdata, mz_zip_file *file_info);
-int32_t minizip_add_progress_cb(void *handle, void *userdata, mz_zip_file *file_info, int64_t position);
-int32_t minizip_add(const char *path, const char *password, minizip_opt *options, std::vector<std::string>& args);
+int32_t minizip_add(const char *path, const char *password, minizip_opt *options, std::vector<std::string> &args);
 
 int32_t minizip_extract_entry_cb(void *handle, void *userdata, mz_zip_file *file_info, const char *path);
-int32_t minizip_extract_progress_cb(void *handle, void *userdata, mz_zip_file *file_info, int64_t position);
-int32_t minizip_extract(const char *path, const char *pattern, const char *destination, const char *password, minizip_opt *options);
+int32_t minizip_extract(const char *path, const char *pattern, const char *destination, const char *password,
+                        minizip_opt *options);
 
-int32_t minizip_erase(const char *src_path, const char *target_path, std::vector<std::string>& args);
+int32_t minizip_erase(const char *src_path, const char *target_path, std::vector<std::string> &args);
 
 /***************************************************************************/
-
-int32_t minizip_list(const char *path,std::vector<std::string>& filenames) {
+int32_t minizip_list(const char *path, std::vector<std::string> &filenames) {
     mz_zip_file *file_info = nullptr;
     int32_t err = MZ_OK;
     void *reader = nullptr;
-
 
     mz_zip_reader_create(&reader);
     err = mz_zip_reader_open_file(reader, path);
@@ -77,7 +70,6 @@ int32_t minizip_list(const char *path,std::vector<std::string>& filenames) {
             break;
         }
 
-
         /* collect file name */
         filenames.emplace_back(file_info->filename);
 
@@ -98,7 +90,6 @@ int32_t minizip_list(const char *path,std::vector<std::string>& filenames) {
 }
 
 /***************************************************************************/
-
 int32_t minizip_add_entry_cb(void *handle, void *userdata, mz_zip_file *file_info) {
     MZ_UNUSED(handle);
     MZ_UNUSED(userdata);
@@ -108,34 +99,10 @@ int32_t minizip_add_entry_cb(void *handle, void *userdata, mz_zip_file *file_inf
     return MZ_OK;
 }
 
-int32_t minizip_add_progress_cb(void *handle, void *userdata, mz_zip_file *file_info, int64_t position) {
-    auto *options = (minizip_opt *)userdata;
-    double progress = 0;
-    uint8_t raw = 0;
-
-    MZ_UNUSED(userdata);
-
-    mz_zip_writer_get_raw(handle, &raw);
-
-    if (raw && file_info->compressed_size > 0)
-        progress = ((double)position / file_info->compressed_size) * 100;
-    else if (!raw && file_info->uncompressed_size > 0)
-        progress = ((double)position / file_info->uncompressed_size) * 100;
-
-    /* Print the progress of the current compress operation */
-    if (options->verbose)
-        printf("%s - %" PRId64 " / %" PRId64 " (%.02f%%)\n", file_info->filename, position,
-            file_info->uncompressed_size, progress);
-    return MZ_OK;
-}
-
-
-
-int32_t minizip_add(const char *path, const char *password, minizip_opt *options, std::vector<std::string>& args) {
+int32_t minizip_add(const char *path, const char *password, minizip_opt *options, std::vector<std::string> &args) {
     void *writer = nullptr;
     int32_t err = MZ_OK;
     int32_t err_close = MZ_OK;
-
 
     printf("Archive %s\n", path);
 
@@ -147,7 +114,6 @@ int32_t minizip_add(const char *path, const char *password, minizip_opt *options
     mz_zip_writer_set_compress_level(writer, options->compress_level);
     mz_zip_writer_set_follow_links(writer, options->follow_links);
     mz_zip_writer_set_store_links(writer, options->store_links);
-    mz_zip_writer_set_progress_cb(writer, options, minizip_add_progress_cb);
     mz_zip_writer_set_entry_cb(writer, options, minizip_add_entry_cb);
     mz_zip_writer_set_zip_cd(writer, options->zip_cd);
     if (options->cert_path != nullptr)
@@ -178,7 +144,6 @@ int32_t minizip_add(const char *path, const char *password, minizip_opt *options
 }
 
 /***************************************************************************/
-
 int32_t minizip_extract_entry_cb(void *handle, void *userdata, mz_zip_file *file_info, const char *path) {
     MZ_UNUSED(handle);
     MZ_UNUSED(userdata);
@@ -189,34 +154,11 @@ int32_t minizip_extract_entry_cb(void *handle, void *userdata, mz_zip_file *file
     return MZ_OK;
 }
 
-int32_t minizip_extract_progress_cb(void *handle, void *userdata, mz_zip_file *file_info, int64_t position) {
-    auto *options = (minizip_opt *)userdata;
-    double progress = 0;
-    uint8_t raw = 0;
-
-    MZ_UNUSED(userdata);
-
-    mz_zip_reader_get_raw(handle, &raw);
-
-    if (raw && file_info->compressed_size > 0)
-        progress = ((double)position / file_info->compressed_size) * 100;
-    else if (!raw && file_info->uncompressed_size > 0)
-        progress = ((double)position / file_info->uncompressed_size) * 100;
-
-    /* Print the progress of the current extraction */
-    if (options->verbose)
-        printf("%s - %" PRId64 " / %" PRId64 " (%.02f%%)\n", file_info->filename, position,
-            file_info->uncompressed_size, progress);
-
-    return MZ_OK;
-}
-
-
-int32_t minizip_extract(const char *path, const char *pattern, const char *destination, const char *password, minizip_opt *options) {
+int32_t minizip_extract(const char *path, const char *pattern, const char *destination, const char *password,
+                        minizip_opt *options) {
     void *reader = nullptr;
     int32_t err = MZ_OK;
     int32_t err_close = MZ_OK;
-
 
     printf("Archive %s\n", path);
 
@@ -226,8 +168,6 @@ int32_t minizip_extract(const char *path, const char *pattern, const char *desti
     mz_zip_reader_set_password(reader, password);
     mz_zip_reader_set_encoding(reader, options->encoding);
     mz_zip_reader_set_entry_cb(reader, options, minizip_extract_entry_cb);
-    mz_zip_reader_set_progress_cb(reader, options, minizip_extract_progress_cb);
-
 
     err = mz_zip_reader_open_file(reader, path);
 
@@ -260,8 +200,7 @@ int32_t minizip_extract(const char *path, const char *pattern, const char *desti
 }
 
 /***************************************************************************/
-
-int32_t minizip_erase(const char *src_path, const char *target_path, std::vector<std::string>& args) {
+int32_t minizip_erase(const char *src_path, const char *target_path, std::vector<std::string> &args) {
     mz_zip_file *file_info = nullptr;
     const char *target_path_ptr = target_path;
     void *reader = nullptr;
@@ -371,8 +310,7 @@ int32_t minizip_erase(const char *src_path, const char *target_path, std::vector
 }
 
 /***************************************************************************/
-
-int main(int , const char **) {
+int main(int, const char **) {
     minizip_opt options;
     int32_t err = 0;
 
@@ -380,25 +318,22 @@ int main(int , const char **) {
 
     options.compress_method = MZ_COMPRESS_METHOD_DEFLATE;
     options.compress_level = MZ_COMPRESS_LEVEL_DEFAULT;
-    options.include_path=1;
+    options.include_path = 1;
     //options.append = 1;
     options.overwrite = 1;
 
-
     std::vector<std::string> filenames;
 
-    filenames={"1.txt","2.txt","folder"};
-    minizip_add("archieve.zip", nullptr, &options,  filenames);
+    filenames = {"1.txt", "2.txt", "folder"};
+    minizip_add("archieve.zip", nullptr, &options, filenames);
 
-    minizip_list("archieve.zip",filenames);
-    for (auto & filename : filenames)
+    minizip_list("archieve.zip", filenames);
+    for (auto &filename: filenames)
         minizip_extract("archieve.zip", filename.c_str()/*nullptr extract all*/ , nullptr /*"./folder"*/, nullptr,
                         &options);
 
-    filenames={"1.txt"};//"folder silmiyor
+    filenames = {"1.txt"};//"folder not delete
     minizip_erase("archieve.zip", nullptr, filenames);
-
 
     return err;
 }
-
