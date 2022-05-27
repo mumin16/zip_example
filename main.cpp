@@ -1,4 +1,4 @@
-#include "ziputil.h"
+#include <ziputil.h>
 
 /***************************************************************************/
 int main(int, const char **) {
